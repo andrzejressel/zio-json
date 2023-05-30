@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.{ DumperOptions, Yaml }
 import zio.Chunk
 import zio.json.ast.Json
 import zio.json.yaml.internal.YamlValueConstruction
+import zio.prelude.Validation
 
 import java.io.{ StringReader, StringWriter }
 import java.nio.charset.StandardCharsets
@@ -22,7 +23,7 @@ import scala.util.matching.Regex
 package object yaml {
 
   implicit final class JsonOps(private val json: Json) extends AnyVal {
-    def toYaml(options: YamlOptions = YamlOptions.default): Either[YAMLException, String] = {
+    def toYaml(options: YamlOptions = YamlOptions.default): Validation[YAMLException, String] = {
       val yamlNode = toYamlAST(options)
 
       try {
@@ -48,9 +49,9 @@ package object yaml {
           serializer.close()
         }
 
-        Right(output.toString)
+        Validation.succeed(output.toString)
       } catch {
-        case error: YAMLException => Left(error)
+        case error: YAMLException => Validation.fail(error)
       }
     }
 
@@ -58,20 +59,19 @@ package object yaml {
   }
 
   implicit final class EncoderYamlOps[A](private val a: A) extends AnyVal {
-    def toYaml(options: YamlOptions = YamlOptions.default)(implicit A: JsonEncoder[A]): Either[String, String] =
-      a.toJsonAST.flatMap(_.toYaml(options).left.map(_.getMessage))
-    def toYamlAST(options: YamlOptions = YamlOptions.default)(implicit A: JsonEncoder[A]): Either[String, Node] =
+    def toYaml(options: YamlOptions = YamlOptions.default)(implicit A: JsonEncoder[A]): Validation[String, String] =
+      a.toJsonAST.flatMap(_.toYaml(options).mapError(_.getMessage))
+    def toYamlAST(options: YamlOptions = YamlOptions.default)(implicit A: JsonEncoder[A]): Validation[String, Node] =
       a.toJsonAST.map(_.toYamlAST(options))
   }
 
   implicit final class DecoderYamlOps(private val raw: String) extends AnyVal {
-    def fromYaml[A](implicit decoder: JsonDecoder[A]): Either[String, A] =
-      Try {
+    def fromYaml[A](implicit decoder: JsonDecoder[A]): Validation[String, A] =
+      Validation {
         val yaml = new Yaml().compose(new StringReader(raw))
         yamlToJson(yaml)
-      }.toEither.left
-        .map(_.getMessage)
-        .flatMap(decoder.fromJsonAST(_))
+      }.mapError(_.getMessage)
+        .flatMap(decoder.fromJsonAST)
   }
 
   private val multiline: Regex = "[\n\u0085\u2028\u2029]".r

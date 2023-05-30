@@ -1,6 +1,8 @@
 package testzio.json
 
 import zio.json._
+import zio.prelude.Validation
+import zio.prelude.ZValidation.succeed
 import zio.test.Assertion._
 import zio.test._
 
@@ -31,16 +33,16 @@ object CarterSpec extends ZIOSpecDefault {
     suite("Carter")(
       test("simple left") {
         type Data = Union[String, Int]
-        val expect: Either[String, Data] = Right(Union(Left("foo")))
+        val expect: Validation[String, Data] = succeed(Union(Left("foo")))
         assert(JsonDecoder[Data].decodeJson("\"foo\""))(equalTo(expect))
       },
       test("simple right") {
         type Data = Union[String, Int]
-        val expect: Either[String, Data] = Right(Union(Right(1)))
+        val expect: Validation[String, Data] = succeed(Union(Right(1)))
         assert(JsonDecoder[Data].decodeJson("1"))(equalTo(expect))
       },
       test("case class 1 field") {
-        val expect: Either[String, Testing0] = Right(Testing0(Union(Left("2025-01-01"))))
+        val expect: Validation[String, Testing0] = succeed(Testing0(Union(Left("2025-01-01"))))
         assert(JsonDecoder[Testing0].decodeJson("{\"y\":\"2025-01-01\"}"))(equalTo(expect))
       },
       test("https://github.com/zio/zio-json/issues/209") {
@@ -54,11 +56,11 @@ object CarterSpec extends ZIOSpecDefault {
         //
         // 2. or (uuugh) the caller should always check if a recording reader is
         //    all caught up before returning control back to the underlying
-        val expect: Either[String, Testing1] = Right(Testing1(Union(Right(0.1)), Union(Left("2025-01-01"))))
+        val expect: Validation[String, Testing1] = succeed(Testing1(Union(Right(0.1)), Union(Left("2025-01-01"))))
         assert(JsonDecoder[Testing1].decodeJson("{\"x\":0.1,\"y\":\"2025-01-01\"}"))(equalTo(expect))
       },
       test("whitespace showing no retract call") {
-        val expect: Either[String, Testing1] = Right(Testing1(Union(Right(0.1)), Union(Left("2025-01-01"))))
+        val expect: Validation[String, Testing1] = succeed(Testing1(Union(Right(0.1)), Union(Left("2025-01-01"))))
         assert(JsonDecoder[Testing1].decodeJson("{\"x\":0.1 ,\"y\":\"2025-01-01\"}"))(equalTo(expect))
       }
     )

@@ -1,7 +1,6 @@
 package zio.json
 
 import scala.annotation.nowarn
-
 import zio.Tag
 import zio.{ test => _, _ }
 import zio.json.golden.filehelpers._
@@ -9,9 +8,10 @@ import zio.stacktracer.TracingImplicits.disableAutoTrace
 import zio.test._
 import zio.test.diff._
 import zio.test.diff.Diff._
-import java.nio.file.{ Paths, Path, Files }
 
+import java.nio.file.{ Files, Path, Paths }
 import zio.json.ast._
+import zio.prelude.ZValidation
 
 package object golden {
 
@@ -106,7 +106,7 @@ package object golden {
       .sample
       .map(_.value)
       .map { elements =>
-        val jsonElements = elements.map(_.toJsonAST).collect { case Right(a) => a }
+        val jsonElements = elements.map(_.toJsonAST).collect { case ZValidation.Success(_, a) => a }
         val jsonArray    = new Json.Arr(Chunk.fromIterable(jsonElements))
         GoldenSample(jsonArray)
       }

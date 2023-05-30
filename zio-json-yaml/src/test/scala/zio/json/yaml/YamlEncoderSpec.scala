@@ -1,6 +1,7 @@
 package zio.json.yaml
 
 import org.yaml.snakeyaml.DumperOptions.{ LineBreak, NonPrintableStyle, ScalarStyle }
+import zio.json.ValidationAssertions.isSucceeded
 import zio.json._
 import zio.json.ast.Json
 import zio.test.Assertion._
@@ -12,27 +13,27 @@ object YamlEncoderSpec extends ZIOSpecDefault {
     suite("YamlEncoderSpec")(
       test("object root") {
         assert(ex1.toJsonAST.flatMap(_.toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX))))(
-          isRight(equalTo(ex1Yaml))
+          isSucceeded(equalTo(ex1Yaml))
         )
       },
       test("object root, with extension method") {
         assert(ex1.toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX)))(
-          isRight(equalTo(ex1Yaml))
+          isSucceeded(equalTo(ex1Yaml))
         )
       },
       test("scalar root") {
         assert(Json.Str("hello").toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX)))(
-          isRight(equalTo("hello\n"))
+          isSucceeded(equalTo("hello\n"))
         )
       },
       test("special characters in string") {
         assert(Json.Arr(Json.Str("- [] &hello \\!")).toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX)))(
-          isRight(equalTo("  - '- [] &hello \\!'\n"))
+          isSucceeded(equalTo("  - '- [] &hello \\!'\n"))
         )
       },
       test("multiline string") {
         assert(Json.Str("hello\nworld").toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX)))(
-          isRight(equalTo("|-\n  hello\n  world\n"))
+          isSucceeded(equalTo("|-\n  hello\n  world\n"))
         )
       },
       test("multiline string quoted") {
@@ -41,7 +42,7 @@ object YamlEncoderSpec extends ZIOSpecDefault {
             .Str("hello\nworld")
             .toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX, scalarStyle = _ => ScalarStyle.DOUBLE_QUOTED))
         )(
-          isRight(equalTo("\"hello\\nworld\"\n"))
+          isSucceeded(equalTo("\"hello\\nworld\"\n"))
         )
       },
       test("nonprintable string escape") {
@@ -50,7 +51,7 @@ object YamlEncoderSpec extends ZIOSpecDefault {
             .Str("hello\u0008world")
             .toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX, nonPrintableStyle = NonPrintableStyle.ESCAPE))
         )(
-          isRight(equalTo("\"hello\\bworld\"\n"))
+          isSucceeded(equalTo("\"hello\\bworld\"\n"))
         )
       },
       test("nonprintable string binary") {
@@ -59,7 +60,7 @@ object YamlEncoderSpec extends ZIOSpecDefault {
             .Str("hello\u0008world")
             .toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX, nonPrintableStyle = NonPrintableStyle.BINARY))
         )(
-          isRight(equalTo("!!binary |-\n  aGVsbG8Id29ybGQ=\n"))
+          isSucceeded(equalTo("!!binary |-\n  aGVsbG8Id29ybGQ=\n"))
         )
       },
       test("sequence root") {
@@ -68,10 +69,10 @@ object YamlEncoderSpec extends ZIOSpecDefault {
             .Arr(Json.Bool(true), Json.Bool(false), Json.Bool(true))
             .toYaml(YamlOptions.default.copy(lineBreak = LineBreak.UNIX))
         )(
-          isRight(equalTo("""  - true
-                            |  - false
-                            |  - true
-                            |""".stripMargin))
+          isSucceeded(equalTo("""  - true
+                                |  - false
+                                |  - true
+                                |""".stripMargin))
         )
       },
       test("indentation settings") {
@@ -86,7 +87,7 @@ object YamlEncoderSpec extends ZIOSpecDefault {
             )
           )
         )(
-          isRight(equalTo(ex1Yaml2))
+          isSucceeded(equalTo(ex1Yaml2))
         )
       }
     )

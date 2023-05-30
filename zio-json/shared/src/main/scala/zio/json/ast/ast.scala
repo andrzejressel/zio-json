@@ -20,6 +20,8 @@ import zio.json.JsonDecoder.{ JsonError, UnsafeJson }
 import zio.json._
 import zio.json.ast.Json._
 import zio.json.internal._
+import zio.prelude.Validation
+import zio.prelude.ZValidation.succeed
 
 import scala.annotation._
 
@@ -39,7 +41,7 @@ import scala.annotation._
  * JsonValue / Json / JValue
  */
 sealed abstract class Json { self =>
-  final def as[A](implicit decoder: JsonDecoder[A]): Either[String, A] = decoder.fromJsonAST(self)
+  final def as[A](implicit decoder: JsonDecoder[A]): Validation[String, A] = decoder.fromJsonAST(self)
 
   def asNull: Option[Unit]         = None
   def asBoolean: Option[Boolean]   = None
@@ -389,7 +391,7 @@ object Json {
       def unsafeEncode(a: Obj, indent: Option[Int], out: Write): Unit =
         obje.unsafeEncode(a.fields, indent, out)
 
-      override final def toJsonAST(a: Obj): Either[String, Json] = Right(a)
+      override final def toJsonAST(a: Obj): Validation[String, Json] = succeed(a)
     }
   }
   final case class Arr(elements: Chunk[Json]) extends Json {
@@ -432,7 +434,7 @@ object Json {
       def unsafeEncode(a: Arr, indent: Option[Int], out: Write): Unit =
         arre.unsafeEncode(a.elements, indent, out)
 
-      override final def toJsonAST(a: Arr): Either[String, Json] = Right(a)
+      override final def toJsonAST(a: Arr): Validation[String, Json] = succeed(a)
     }
   }
   final case class Bool(value: Boolean) extends Json {
@@ -458,7 +460,7 @@ object Json {
       def unsafeEncode(a: Bool, indent: Option[Int], out: Write): Unit =
         JsonEncoder.boolean.unsafeEncode(a.value, indent, out)
 
-      override final def toJsonAST(a: Bool): Either[String, Json] = Right(a)
+      override final def toJsonAST(a: Bool): Validation[String, Json] = succeed(a)
     }
   }
   final case class Str(value: String) extends Json {
@@ -480,7 +482,7 @@ object Json {
       def unsafeEncode(a: Str, indent: Option[Int], out: Write): Unit =
         JsonEncoder.string.unsafeEncode(a.value, indent, out)
 
-      override final def toJsonAST(a: Str): Either[String, Json] = Right(a)
+      override final def toJsonAST(a: Str): Validation[String, Json] = succeed(a)
     }
   }
   final case class Num(value: java.math.BigDecimal) extends Json {
@@ -510,7 +512,7 @@ object Json {
       def unsafeEncode(a: Num, indent: Option[Int], out: Write): Unit =
         JsonEncoder.bigDecimal.unsafeEncode(a.value, indent, out)
 
-      override final def toJsonAST(a: Num): Either[String, Num] = Right(a)
+      override final def toJsonAST(a: Num): Validation[String, Num] = succeed(a)
     }
   }
   type Null = Null.type
@@ -532,7 +534,7 @@ object Json {
       def unsafeEncode(a: Null.type, indent: Option[Int], out: Write): Unit =
         out.write("null")
 
-      override final def toJsonAST(a: Null.type): Either[String, Json] = Right(a)
+      override final def toJsonAST(a: Null.type): Validation[String, Json] = succeed(a)
     }
 
     override def asNull: Some[Unit] = Some(())
@@ -569,7 +571,7 @@ object Json {
         case Null    => Null.encoder.unsafeEncode(Null, indent, out)
       }
 
-    override final def toJsonAST(a: Json): Either[String, Json] = Right(a)
+    override final def toJsonAST(a: Json): Validation[String, Json] = succeed(a)
   }
 
   def apply(fields: (String, Json)*): Json = Json.Obj(Chunk(fields: _*))

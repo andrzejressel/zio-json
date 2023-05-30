@@ -38,7 +38,7 @@ object filehelpers {
   def readSampleFromFile(path: Path)(implicit trace: Trace): Task[GoldenSample] =
     for {
       json   <- zio.json.readJsonAs(path.toFile).runHead.someOrFailException
-      sample <- ZIO.fromEither(json.as[GoldenSample].left.map(error => new Exception(error)))
+      sample <- json.as[GoldenSample].mapError(error => new Exception(error)).toZIO
     } yield sample
 
 }

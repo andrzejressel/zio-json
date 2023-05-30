@@ -3,6 +3,7 @@ package zio.json.interop.refined
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
+import zio.json.ValidationAssertions.{ isSingleFailure, isSucceeded }
 import zio.json._
 import zio.test.Assertion._
 import zio.test._
@@ -11,8 +12,10 @@ object RefinedSpec extends ZIOSpecDefault {
   val spec: Spec[Environment, Any] =
     suite("Refined")(
       test("Refined") {
-        assert("""{"name":""}""".fromJson[Person])(isLeft(equalTo(".name(Predicate isEmpty() did not fail.)"))) &&
-        assert("""{"name":"fommil"}""".fromJson[Person])(isRight(equalTo(Person("fommil")))) &&
+        assert("""{"name":""}""".fromJson[Person])(
+          isSingleFailure(equalTo(".name(Predicate isEmpty() did not fail.)"))
+        ) &&
+        assert("""{"name":"fommil"}""".fromJson[Person])(isSucceeded(equalTo(Person("fommil")))) &&
         assert(Person("fommil").toJson)(equalTo("""{"name":"fommil"}"""))
       }
     )

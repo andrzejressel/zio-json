@@ -6,8 +6,10 @@ import testzio.json.TestUtils._
 import testzio.json.data.googlemaps._
 import testzio.json.data.twitter._
 import zio._
+import zio.json.ValidationAssertions.{ isSingleFailure, isSucceeded }
 import zio.json._
 import zio.json.ast._
+import zio.prelude.Validation
 import zio.stream.ZStream
 import zio.test.Assertion._
 import zio.test.TestAspect._
@@ -26,7 +28,7 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
 
         for {
           s <- getResourceAsStringM(testFile)
-          r <- ZIO.fromEither(s.fromJson[Json]).exit
+          r <- s.fromJson[Json].toZIO.exit
         } yield {
           assert(r)(fails(equalTo("Unexpected structure")))
         }
@@ -48,7 +50,7 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
       },
       test("googleMapsError") {
         getResourceAsStringM("google_maps_api_error_response.json").map { str =>
-          assert(str.fromJson[DistanceMatrix])(isLeft(equalTo(".rows[0].elements[0].distance.value(missing)")))
+          assert(str.fromJson[DistanceMatrix])(isSingleFailure(equalTo(".rows[0].elements[0].distance.value(missing)")))
         }
       },
       test("googleMapsAst") {
@@ -258,16 +260,16 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
         suite("combinators")(
           test("test JsonDecoder.orElse") {
             val decoder = JsonDecoder[Int].widen[AnyVal].orElse(JsonDecoder[Boolean].widen[AnyVal])
-            assert(decoder.decodeJson("true"))(equalTo(Right(true.asInstanceOf[AnyVal])))
+            assert(decoder.decodeJson("true"))(isSucceeded(equalTo(true.asInstanceOf[AnyVal])))
           },
           test("test hand-coded alternative in `orElse` comment") {
             val decoder: JsonDecoder[AnyVal] = JsonDecoder.peekChar[AnyVal] {
               case 't' | 'f' => JsonDecoder[Boolean].widen
               case c         => JsonDecoder[Int].widen
             }
-            assert(decoder.decodeJson("true"))(equalTo(Right(true.asInstanceOf[AnyVal]))) &&
-            assert(decoder.decodeJson("42"))(equalTo(Right(42.asInstanceOf[AnyVal]))) &&
-            assert(decoder.decodeJson("\"a string\""))(equalTo(Left("(expected a number, got a)")))
+            assert(decoder.decodeJson("true"))(isSucceeded(equalTo(true.asInstanceOf[AnyVal]))) &&
+            assert(decoder.decodeJson("42"))(isSucceeded(equalTo(42.asInstanceOf[AnyVal]))) &&
+            assert(decoder.decodeJson("\"a string\""))(isSingleFailure(equalTo("(expected a number, got a)")))
           }
         )
       )
@@ -276,14 +278,11 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
   def testAst(label: String) =
     test(label) {
       getResourceAsStringM(s"jawn/$label.json").flatMap { input =>
-        val expected = jawn.JParser.parseFromString(input).toEither.map(fromJawn)
+        val expected = Validation.fromTry(jawn.JParser.parseFromString(input)).map(fromJawn)
         val got      = input.fromJson[Json].map(normalize)
 
-        def e2s[A, B](e: Either[A, B]) =
-          e match {
-            case Left(left)   => left.toString
-            case Right(right) => right.toString
-          }
+        def e2s[A, B](e: Validation[A, B]) =
+          e.fold(_.toString(), _.toString)
 
         if (expected != got) {
           val gotf      = s"${label}-got.json"
@@ -294,7 +293,7 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
             _ <- ZIO.attemptBlocking(writeFile(expectedf, e2s(expected)))
             _ <- Console.printLine(s"dumped .json files, use `cmp <(jq . ${expectedf}) <(jq . ${gotf})`")
           } yield {
-            assert(got)(equalTo(expected.left.map(_.getMessage)))
+            assert(got)(equalTo(expected.mapError(_.getMessage)))
           }
         } else ZIO.succeed(assertCompletes)
       }
@@ -338,11 +337,11 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
   // Helper function because Circe and Zio-JSON’s Left differ, making tests unnecessary verbose
   def matchesCirceDecoded[A](
     expected: String
-  )(implicit cDecoder: circe.Decoder[A], eq: Eql[A, A]): Assertion[Either[String, A]] = {
+  )(implicit cDecoder: circe.Decoder[A], eq: Eql[A, A]): Assertion[Validation[String, A]] = {
 
     val cDecoded = circe.parser.decode(expected).left.map(_.toString)
 
-    Assertion.assertion("matchesCirceDecoded")(actual => actual == cDecoded)
+    Assertion.assertion("matchesCirceDecoded")(actual => actual.toEither == cDecoded)
   }
 
   object exampleproducts {

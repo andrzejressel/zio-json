@@ -19,6 +19,8 @@ import zio.json.ast.Json
 import zio.json.internal._
 import zio.json.javatime.parsers
 import zio.json.uuid.UUIDParser
+import zio.prelude.Validation
+import zio.prelude.ZValidation.{ fail, succeed }
 import zio.{ Chunk, NonEmptyChunk }
 
 import java.util.UUID
@@ -65,12 +67,12 @@ trait JsonDecoder[A] extends JsonDecoderPlatformSpecific[A] {
    *
    * Note: This method may not entirely consume the specified character sequence.
    */
-  final def decodeJson(str: CharSequence): Either[String, A] =
-    try Right(unsafeDecode(Nil, new FastStringReader(str)))
+  final def decodeJson(str: CharSequence): Validation[String, A] =
+    try succeed(unsafeDecode(Nil, new FastStringReader(str)))
     catch {
-      case JsonDecoder.UnsafeJson(trace) => Left(JsonError.render(trace))
-      case _: UnexpectedEnd              => Left("Unexpected end of input")
-      case _: StackOverflowError         => Left("Unexpected structure")
+      case JsonDecoder.UnsafeJson(trace) => fail(JsonError.render(trace))
+      case _: UnexpectedEnd              => fail("Unexpected end of input")
+      case _: StackOverflowError         => fail("Unexpected structure")
     }
 
   /**
@@ -154,28 +156,23 @@ trait JsonDecoder[A] extends JsonDecoderPlatformSpecific[A] {
    * Returns a new codec whose decoded values will be mapped by the specified function, which may
    * itself decide to fail with some type of error.
    */
-  final def mapOrFail[B](f: A => Either[String, B]): JsonDecoder[B] =
+  final def mapOrFail[B](f: A => Validation[String, B]): JsonDecoder[B] =
     new JsonDecoder[B] {
 
       def unsafeDecode(trace: List[JsonError], in: RetractReader): B =
-        f(self.unsafeDecode(trace, in)) match {
-          case Left(err) =>
-            throw JsonDecoder.UnsafeJson(JsonError.Message(err) :: trace)
-          case Right(b) => b
-        }
+        f(self.unsafeDecode(trace, in))
+          .mapError(JsonError.Message)
+          .fold(errors => throw JsonDecoder.UnsafeJson(errors.toList ++ trace), identity)
 
       override final def unsafeFromJsonAST(trace: List[JsonError], json: Json): B =
-        f(self.unsafeFromJsonAST(trace, json)) match {
-          case Left(err) => throw JsonDecoder.UnsafeJson(JsonError.Message(err) :: trace)
-          case Right(b)  => b
-        }
+        f(self.unsafeFromJsonAST(trace, json))
+          .mapError(JsonError.Message)
+          .fold(errors => throw JsonDecoder.UnsafeJson(errors.toList ++ trace), identity)
 
       override def unsafeDecodeMissing(trace: List[JsonError]): B =
-        f(self.unsafeDecodeMissing(trace)) match {
-          case Left(err) =>
-            throw JsonDecoder.UnsafeJson(JsonError.Message(err) :: trace)
-          case Right(b) => b
-        }
+        f(self.unsafeDecodeMissing(trace))
+          .mapError(JsonError.Message)
+          .fold(errors => throw JsonDecoder.UnsafeJson(errors.toList ++ trace), identity)
 
     }
 
@@ -219,12 +216,11 @@ trait JsonDecoder[A] extends JsonDecoderPlatformSpecific[A] {
    * The default implementation encodes the Json to a byte stream and uses decode to parse that.
    * Override to provide a more performant implementation.
    */
-  final def fromJsonAST(json: Json): Either[String, A] =
-    try Right(unsafeFromJsonAST(Nil, json))
-    catch {
-      case JsonDecoder.UnsafeJson(trace) => Left(JsonError.render(trace))
-      case _: UnexpectedEnd              => Left("Unexpected end of input")
-      case _: StackOverflowError         => Left("Unexpected structure")
+  final def fromJsonAST(json: Json): Validation[String, A] =
+    Validation(unsafeFromJsonAST(Nil, json)).mapError {
+      case JsonDecoder.UnsafeJson(trace) => JsonError.render(trace)
+      case _: UnexpectedEnd              => "Unexpected end of input"
+      case _: StackOverflowError         => "Unexpected structure"
     }
 
 }
@@ -295,8 +291,8 @@ object JsonDecoder extends GeneratedTupleDecoders with DecoderLowPriority1 with 
   }
 
   implicit val char: JsonDecoder[Char] = string.mapOrFail {
-    case str if str.length == 1 => Right(str(0))
-    case _                      => Left("expected one character")
+    case str if str.length == 1 => succeed(str(0))
+    case _                      => fail("expected one character")
   }
   implicit val symbol: JsonDecoder[Symbol] = string.map(Symbol(_))
 
@@ -510,7 +506,7 @@ private[json] trait DecoderLowPriority1 extends DecoderLowPriority2 {
   }
 
   implicit def nonEmptyChunk[A: JsonDecoder]: JsonDecoder[NonEmptyChunk[A]] =
-    chunk[A].mapOrFail(NonEmptyChunk.fromChunk(_).toRight("Chunk was empty"))
+    chunk[A].mapOrFail(chunk => Validation.fromOptionWith("Chunk was empty")(NonEmptyChunk.fromChunk(chunk)))
 
   implicit def indexedSeq[A: JsonDecoder]: JsonDecoder[IndexedSeq[A]] =
     new JsonDecoder[IndexedSeq[A]] {

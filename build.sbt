@@ -35,7 +35,8 @@ addCommandAlias(
 
 addCommandAlias("testJS", "zioJsonJS/test")
 
-val zioVersion = "2.0.12"
+val zioVersion        = "2.0.12"
+val zioPreludeVersion = "1.0.0-RC19"
 
 lazy val zioJsonRoot = project
   .in(file("."))
@@ -66,6 +67,7 @@ lazy val zioJson = crossProject(JSPlatform, JVMPlatform)
   .settings(crossProjectSettings)
   .settings(buildInfoSettings("zio.json"))
   .enablePlugins(NeoJmhPlugin)
+  .dependsOn(zioJsonTestUtils % "compile->test")
   .settings(
     scalacOptions -= "-Xfatal-warnings", // not quite ready.
 
@@ -82,6 +84,7 @@ lazy val zioJson = crossProject(JSPlatform, JVMPlatform)
       "dev.zio"                %%% "zio"                     % zioVersion,
       "dev.zio"                %%% "zio-streams"             % zioVersion,
       "org.scala-lang.modules" %%% "scala-collection-compat" % "2.9.0",
+      "dev.zio"                %%% "zio-prelude"             % zioPreludeVersion,
       "dev.zio"                %%% "zio-test"                % zioVersion   % "test",
       "dev.zio"                %%% "zio-test-sbt"            % zioVersion   % "test",
       "io.circe"               %%% "circe-core"              % circeVersion % "test",
@@ -244,6 +247,7 @@ lazy val zioJsonGolden = project
 
 lazy val zioJsonYaml = project
   .in(file("zio-json-yaml"))
+  .dependsOn(zioJsonTestUtils.jvm % "compile->test")
   .settings(stdSettings("zio-json-yaml"))
   .settings(buildInfoSettings("zio.json.yaml"))
   .settings(
@@ -282,6 +286,7 @@ lazy val zioJsonMacrosJS = zioJsonMacros.js
 
 lazy val zioJsonInteropHttp4s = project
   .in(file("zio-json-interop-http4s"))
+  .dependsOn(zioJsonTestUtils.jvm % "compile->test")
   .settings(stdSettings("zio-json-interop-http4s"))
   .settings(buildInfoSettings("zio.json.interop.http4s"))
   .settings(
@@ -303,6 +308,7 @@ lazy val zioJsonInteropRefined = crossProject(JSPlatform, JVMPlatform)
   .in(file("zio-json-interop-refined"))
   .jvmConfigure(_.dependsOn(zioJsonJVM))
   .jsConfigure(_.dependsOn(zioJsonJS))
+  .dependsOn(zioJsonTestUtils % "compile->test")
   .settings(stdSettings("zio-json-interop-refined"))
   .settings(buildInfoSettings("zio.json.interop.refined"))
   .settings(
@@ -319,6 +325,7 @@ lazy val zioJsonInteropScalaz7x = crossProject(JSPlatform, JVMPlatform)
   .in(file("zio-json-interop-scalaz7x"))
   .jvmConfigure(_.dependsOn(zioJsonJVM))
   .jsConfigure(_.dependsOn(zioJsonJS))
+  .dependsOn(zioJsonTestUtils % "compile->test")
   .settings(stdSettings("zio-json-interop-scalaz7x"))
   .settings(buildInfoSettings("zio.json.interop.scalaz7x"))
   .settings(
@@ -331,6 +338,18 @@ lazy val zioJsonInteropScalaz7x = crossProject(JSPlatform, JVMPlatform)
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
   .enablePlugins(BuildInfoPlugin)
+
+lazy val zioJsonTestUtils = crossProject(JSPlatform, JVMPlatform)
+  .in(file("zio-json-test-utils"))
+  .settings(crossProjectSettings)
+  .settings(stdSettings("zio-json-test-utils"))
+  .settings(buildInfoSettings("zio-json-test-utils"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "dev.zio" %%% "zio-prelude" % zioPreludeVersion,
+      "dev.zio" %%% "zio-test"    % zioVersion
+    )
+  )
 
 lazy val docs = project
   .in(file("zio-json-docs"))

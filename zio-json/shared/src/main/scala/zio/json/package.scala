@@ -16,6 +16,7 @@
 package zio
 
 import zio.json.ast.Json
+import zio.prelude.Validation
 
 package object json extends JsonPackagePlatformSpecific {
   implicit final class EncoderOps[A](private val a: A) extends AnyVal {
@@ -24,7 +25,7 @@ package object json extends JsonPackagePlatformSpecific {
     // Jon Pretty's better looking brother, but a bit slower
     def toJsonPretty(implicit encoder: JsonEncoder[A]): String = encoder.encodeJson(a, Some(0)).toString
 
-    def toJsonAST(implicit encoder: JsonEncoder[A]): Either[String, Json] = encoder.toJsonAST(a)
+    def toJsonAST(implicit encoder: JsonEncoder[A]): Validation[String, Json] = encoder.toJsonAST(a)
   }
 
   implicit final class DecoderOps(private val json: CharSequence) extends AnyVal {
@@ -40,6 +41,6 @@ package object json extends JsonPackagePlatformSpecific {
      *
      * {{{jq '.rows[0].elements[0].distance' input.json}}}
      */
-    def fromJson[A](implicit decoder: JsonDecoder[A]): Either[String, A] = decoder.decodeJson(json)
+    def fromJson[A](implicit decoder: JsonDecoder[A]): Validation[String, A] = decoder.decodeJson(json)
   }
 }

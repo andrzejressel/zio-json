@@ -7,9 +7,10 @@ import zio.json.JsonCodecConfiguration.SumTypeHandling.WrapperWithClassNameField
 import zio.json.JsonDecoder.{ JsonError, UnsafeJson }
 import zio.json.ast.Json
 import zio.json.internal.{ Lexer, RetractReader, StringMatrix, Write }
+import zio.prelude.Validation
+import zio.prelude.ZValidation.{ fail, succeed }
 
 import scala.annotation._
-import scala.collection.mutable
 import scala.language.experimental.macros
 
 /**
@@ -524,8 +525,8 @@ object DeriveJsonEncoder {
       new JsonEncoder[A] {
         def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = out.write("{}")
 
-        override final def toJsonAST(a: A): Either[String, Json] =
-          Right(Json.Obj(Chunk.empty))
+        override final def toJsonAST(a: A): Validation[String, Json] =
+          succeed(Json.Obj(Chunk.empty))
       }
     else
       new JsonEncoder[A] {
@@ -578,20 +579,22 @@ object DeriveJsonEncoder {
           out.write("}")
         }
 
-        override final def toJsonAST(a: A): Either[String, Json] =
-          ctx.parameters
-            .foldLeft[Either[String, Chunk[(String, Json)]]](Right(Chunk.empty)) { case (c, param) =>
-              val name = param.annotations.collectFirst { case jsonField(name) =>
-                name
-              }.getOrElse(nameTransform(param.label))
-              c.flatMap { chunk =>
+        override final def toJsonAST(a: A): Validation[String, Json] =
+          Validation
+            .validateAll(
+              ctx.parameters.map { param =>
+                val name = param.annotations.collectFirst { case jsonField(name) =>
+                  name
+                }.getOrElse(nameTransform(param.label))
+
                 param.typeclass.toJsonAST(param.dereference(a)).map { value =>
-                  if (value == Json.Null) chunk
-                  else chunk :+ name -> value
+                  if (value == Json.Null) None
+                  else Some(name -> value)
                 }
               }
-            }
-            .map(Json.Obj.apply)
+            )
+            .map(_.flatten)
+            .map(Json.Obj(_: _*))
       }
 
   def split[A](ctx: SealedTrait[JsonEncoder, A])(implicit config: JsonCodecConfiguration): JsonEncoder[A] = {
@@ -616,7 +619,7 @@ object DeriveJsonEncoder {
           out.write("}")
         }
 
-        override def toJsonAST(a: A): Either[String, Json] =
+        override def toJsonAST(a: A): Validation[String, Json] =
           ctx.split(a) { sub =>
             sub.typeclass.toJsonAST(sub.cast(a)).map { inner =>
               Json.Obj(
@@ -644,11 +647,11 @@ object DeriveJsonEncoder {
           sub.typeclass.unsafeEncode(sub.cast(a), indent, intermediate)
         }
 
-        override def toJsonAST(a: A): Either[String, Json] =
+        override def toJsonAST(a: A): Validation[String, Json] =
           ctx.split(a) { sub =>
             sub.typeclass.toJsonAST(sub.cast(a)).flatMap {
-              case Json.Obj(fields) => Right(Json.Obj(fields :+ hintfield -> Json.Str(names(sub.index))))
-              case _                => Left("Subtype is not encoded as an object")
+              case Json.Obj(fields) => succeed(Json.Obj(fields :+ hintfield -> Json.Str(names(sub.index))))
+              case _                => fail("Subtype is not encoded as an object")
             }
           }
       }

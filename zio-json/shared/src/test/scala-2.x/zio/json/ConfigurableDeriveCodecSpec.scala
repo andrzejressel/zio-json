@@ -121,7 +121,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ClassWithFields] = DeriveJsonCodec.gen
 
           assertTrue(
-            jsonStr.fromJson[ClassWithFields].isLeft
+            jsonStr.fromJson[ClassWithFields].toEither.isLeft
           )
         }
       ),
@@ -160,7 +160,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ClassWithFields] = DeriveJsonCodec.gen
 
           assertTrue(
-            jsonAST.as[ClassWithFields].isLeft
+            jsonAST.as[ClassWithFields].toEither.isLeft
           )
         }
       )

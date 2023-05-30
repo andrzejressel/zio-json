@@ -15,6 +15,7 @@
  */
 package zio.json
 
+import zio.prelude.Validation
 import zio.{ Chunk, NonEmptyChunk }
 
 import scala.collection.immutable
@@ -57,7 +58,7 @@ final case class JsonCodec[A](encoder: JsonEncoder[A], decoder: JsonDecoder[A]) 
 
   final def <*(that: => JsonCodec[Unit]): JsonCodec[A] = self.zipLeft(that)
 
-  final def decodeJson(str: CharSequence): Either[String, A] = decoder.decodeJson(str)
+  final def decodeJson(str: CharSequence): Validation[String, A] = decoder.decodeJson(str)
 
   final def encodeJson(a: A, indent: Option[Int]): CharSequence = encoder.encodeJson(a, indent)
 
@@ -70,7 +71,7 @@ final case class JsonCodec[A](encoder: JsonEncoder[A], decoder: JsonDecoder[A]) 
   final def transform[B](f: A => B, g: B => A): JsonCodec[B] =
     JsonCodec(encoder.contramap(g), decoder.map(f))
 
-  final def transformOrFail[B](f: A => Either[String, B], g: B => A): JsonCodec[B] =
+  final def transformOrFail[B](f: A => Validation[String, B], g: B => A): JsonCodec[B] =
     JsonCodec(encoder.contramap(g), decoder.mapOrFail(f))
 
   final def zip[B](that: => JsonCodec[B]): JsonCodec[(A, B)] =

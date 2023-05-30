@@ -1,6 +1,7 @@
 package testzio.json
 
 import testzio.json.Gens._
+import zio.json.ValidationAssertions.isSucceeded
 import zio.json._
 import zio.json.ast.Json
 import zio.test.Assertion._
@@ -109,6 +110,6 @@ object RoundTripSpec extends ZIOSpecDefault {
     }
 
   private def assertRoundtrips[A: JsonEncoder: JsonDecoder](a: A) =
-    assert(a.toJson.fromJson[A])(isRight(equalTo(a))) &&
-      assert(a.toJsonPretty.fromJson[A])(isRight(equalTo(a)))
+    assert(a.toJson.fromJson[A])(isSucceeded(equalTo(a))) &&
+      assert(a.toJsonPretty.fromJson[A])(isSucceeded(equalTo(a)))
 }
