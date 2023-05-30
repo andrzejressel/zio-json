@@ -91,7 +91,7 @@ class SyntheticBenchmarks {
 
   @Benchmark
   def decodeZioSuccess(): Either[String, Nested] =
-    jsonChars.fromJson[Nested]
+    jsonChars.fromJsonValidation[Nested]
 
   @Benchmark
   def encodeZio(): CharSequence =

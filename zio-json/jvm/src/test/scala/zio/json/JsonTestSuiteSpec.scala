@@ -25,7 +25,7 @@ object JsonTestSuiteSpec extends ZIOSpecDefault {
                            // Catch Stack overflow
                            try {
                              JsonDecoder[Json]
-                               .decodeJson(input)
+                               .decodeJsonValidation(input)
                                .fold(Exit.fail, Exit.succeed)
                            } catch {
                              case t: Throwable =>

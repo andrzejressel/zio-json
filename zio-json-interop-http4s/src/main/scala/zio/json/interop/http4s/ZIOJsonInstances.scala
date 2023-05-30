@@ -13,7 +13,7 @@ trait ZIOJsonInstances {
       EntityDecoder.collectBinary(m).subflatMap { chunk =>
         val str = new String(chunk.toArray, StandardCharsets.UTF_8)
         if (str.nonEmpty)
-          str.fromJson.fold(e => Left(MalformedMessageBodyFailure(e.mkString(","), None)), Right(_))
+          str.fromJsonValidation.fold(e => Left(MalformedMessageBodyFailure(e.mkString(","), None)), Right(_))
         else
           Left(MalformedMessageBodyFailure("Invalid JSON: empty body"))
       }

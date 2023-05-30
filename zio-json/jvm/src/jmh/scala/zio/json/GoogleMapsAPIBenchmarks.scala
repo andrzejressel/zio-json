@@ -235,11 +235,11 @@ class GoogleMapsAPIBenchmarks {
 
   @Benchmark
   def decodeZioSuccess1(): Either[String, DistanceMatrix] =
-    jsonChars.fromJson[DistanceMatrix]
+    jsonChars.fromJsonValidation[DistanceMatrix]
 
   @Benchmark
   def decodeZioSuccess2(): Either[String, DistanceMatrix] =
-    jsonCharsCompact.fromJson[DistanceMatrix]
+    jsonCharsCompact.fromJsonValidation[DistanceMatrix]
 
   @Benchmark
   def encodeZio(): CharSequence =
@@ -251,27 +251,27 @@ class GoogleMapsAPIBenchmarks {
 
   @Benchmark
   def decodeZioErrorParse(): Either[String, DistanceMatrix] =
-    jsonCharsErrParse.fromJson[DistanceMatrix]
+    jsonCharsErrParse.fromJsonValidation[DistanceMatrix]
 
   @Benchmark
   def decodeZioErrorNumber(): Either[String, DistanceMatrix] =
-    jsonCharsErrNumber.fromJson[DistanceMatrix]
+    jsonCharsErrNumber.fromJsonValidation[DistanceMatrix]
 
   @Benchmark
   def decodeZioAttack0(): Either[String, DistanceMatrix] =
-    jsonCharsAttack0.fromJson[DistanceMatrix]
+    jsonCharsAttack0.fromJsonValidation[DistanceMatrix]
 
   @Benchmark
   def decodeZioAttack1(): Either[String, DistanceMatrix] =
-    jsonCharsAttack1.fromJson[DistanceMatrix]
+    jsonCharsAttack1.fromJsonValidation[DistanceMatrix]
 
   @Benchmark
   def decodeZioAttack2(): Either[String, DistanceMatrix] =
-    jsonCharsAttack2.fromJson[DistanceMatrix]
+    jsonCharsAttack2.fromJsonValidation[DistanceMatrix]
 
   @Benchmark
   def decodeZioAttack3(): Either[String, DistanceMatrix] =
-    jsonCharsAttack3.fromJson[DistanceMatrix]
+    jsonCharsAttack3.fromJsonValidation[DistanceMatrix]
 
 }
 

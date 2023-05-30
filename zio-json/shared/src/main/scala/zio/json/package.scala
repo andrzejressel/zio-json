@@ -39,8 +39,24 @@ package object json extends JsonPackagePlatformSpecific {
      * missing field named "value". We can use part of the error message in the
      * `jq` command line tool for further inspection, e.g.
      *
+     * This method returns only one error and is deprecated. Use fromJsonValidation to get list of errors
+     *
      * {{{jq '.rows[0].elements[0].distance' input.json}}}
      */
-    def fromJson[A](implicit decoder: JsonDecoder[A]): Validation[String, A] = decoder.decodeJson(json)
+    @deprecated("Use fromJsonValidation instead", since = "0.6.0")
+    def fromJson[A](implicit decoder: JsonDecoder[A]): Either[String, A] = decoder.decodeJson(json)
+
+    /**
+     * Attempts to decode the raw JSON string as an `A`.
+     *
+     * On failure a human readable message is returned using a jq friendly
+     * format. For example the error
+     * `.rows[0].elements[0].distance.value(missing)"` tells us the location of a
+     * missing field named "value". We can use part of the error message in the
+     * `jq` command line tool for further inspection, e.g.
+     *
+     * {{{jq '.rows[0].elements[0].distance' input.json}}}
+     */
+    def fromJsonValidation[A](implicit decoder: JsonDecoder[A]): Validation[String, A] = decoder.decodeJsonValidation(json)
   }
 }

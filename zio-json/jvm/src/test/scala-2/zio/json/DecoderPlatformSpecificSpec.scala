@@ -28,29 +28,29 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
 
         for {
           s <- getResourceAsStringM(testFile)
-          r <- s.fromJson[Json].toZIO.exit
+          r <- s.fromJsonValidation[Json].toZIO.exit
         } yield {
           assert(r)(fails(equalTo("Unexpected structure")))
         }
       },
       test("googleMapsNormal") {
         getResourceAsStringM("google_maps_api_response.json").map { str =>
-          assert(str.fromJson[DistanceMatrix])(matchesCirceDecoded[DistanceMatrix](str))
+          assert(str.fromJsonValidation[DistanceMatrix])(matchesCirceDecoded[DistanceMatrix](str))
         }
       },
       test("googleMapsCompact") {
         getResourceAsStringM("google_maps_api_compact_response.json").map { str =>
-          assert(str.fromJson[DistanceMatrix])(matchesCirceDecoded[DistanceMatrix](str))
+          assert(str.fromJsonValidation[DistanceMatrix])(matchesCirceDecoded[DistanceMatrix](str))
         }
       },
       test("googleMapsExtra") {
         getResourceAsStringM("google_maps_api_extra.json").map { str =>
-          assert(str.fromJson[DistanceMatrix])(matchesCirceDecoded[DistanceMatrix](str))
+          assert(str.fromJsonValidation[DistanceMatrix])(matchesCirceDecoded[DistanceMatrix](str))
         }
       },
       test("googleMapsError") {
         getResourceAsStringM("google_maps_api_error_response.json").map { str =>
-          assert(str.fromJson[DistanceMatrix])(isSingleFailure(equalTo(".rows[0].elements[0].distance.value(missing)")))
+          assert(str.fromJsonValidation[DistanceMatrix])(isSingleFailure(equalTo(".rows[0].elements[0].distance.value(missing)")))
         }
       },
       test("googleMapsAst") {
@@ -58,33 +58,33 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
         val compact  = getResourceAsStringM("google_maps_api_compact_response.json")
 
         (response <&> compact).map { case (response, compact) =>
-          assert(response.fromJson[Json])(equalTo(compact.fromJson[Json]))
+          assert(response.fromJsonValidation[Json])(equalTo(compact.fromJsonValidation[Json]))
         }
       },
       test("twitter") {
         getResourceAsStringM("twitter_api_response.json").map { str =>
-          assert(str.fromJson[List[Tweet]])(matchesCirceDecoded[List[Tweet]](str))
+          assert(str.fromJsonValidation[List[Tweet]])(matchesCirceDecoded[List[Tweet]](str))
         }
       },
       test("geojson1") {
         import testzio.json.data.geojson.generated._
 
         getResourceAsStringM("che.geo.json").map { str =>
-          assert(str.fromJson[GeoJSON])(matchesCirceDecoded[GeoJSON](str))
+          assert(str.fromJsonValidation[GeoJSON])(matchesCirceDecoded[GeoJSON](str))
         }
       },
       test("geojson1 alt") {
         import testzio.json.data.geojson.handrolled._
 
         getResourceAsStringM("che.geo.json").map { str =>
-          assert(str.fromJson[GeoJSON])(matchesCirceDecoded[GeoJSON](str))
+          assert(str.fromJsonValidation[GeoJSON])(matchesCirceDecoded[GeoJSON](str))
         }
       },
       test("geojson2") {
         import testzio.json.data.geojson.generated._
 
         getResourceAsStringM("che-2.geo.json").map { str =>
-          assert(str.fromJson[GeoJSON])(matchesCirceDecoded[GeoJSON](str))
+          assert(str.fromJsonValidation[GeoJSON])(matchesCirceDecoded[GeoJSON](str))
         }
       },
       test("geojson2 lowlevel") {
@@ -260,16 +260,16 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
         suite("combinators")(
           test("test JsonDecoder.orElse") {
             val decoder = JsonDecoder[Int].widen[AnyVal].orElse(JsonDecoder[Boolean].widen[AnyVal])
-            assert(decoder.decodeJson("true"))(isSucceeded(equalTo(true.asInstanceOf[AnyVal])))
+            assert(decoder.decodeJsonValidation("true"))(isSucceeded(equalTo(true.asInstanceOf[AnyVal])))
           },
           test("test hand-coded alternative in `orElse` comment") {
             val decoder: JsonDecoder[AnyVal] = JsonDecoder.peekChar[AnyVal] {
               case 't' | 'f' => JsonDecoder[Boolean].widen
               case c         => JsonDecoder[Int].widen
             }
-            assert(decoder.decodeJson("true"))(isSucceeded(equalTo(true.asInstanceOf[AnyVal]))) &&
-            assert(decoder.decodeJson("42"))(isSucceeded(equalTo(42.asInstanceOf[AnyVal]))) &&
-            assert(decoder.decodeJson("\"a string\""))(isSingleFailure(equalTo("(expected a number, got a)")))
+            assert(decoder.decodeJsonValidation("true"))(isSucceeded(equalTo(true.asInstanceOf[AnyVal]))) &&
+            assert(decoder.decodeJsonValidation("42"))(isSucceeded(equalTo(42.asInstanceOf[AnyVal]))) &&
+            assert(decoder.decodeJsonValidation("\"a string\""))(isSingleFailure(equalTo("(expected a number, got a)")))
           }
         )
       )
@@ -279,7 +279,7 @@ object DecoderPlatformSpecificSpec extends ZIOSpecDefault {
     test(label) {
       getResourceAsStringM(s"jawn/$label.json").flatMap { input =>
         val expected = Validation.fromTry(jawn.JParser.parseFromString(input)).map(fromJawn)
-        val got      = input.fromJson[Json].map(normalize)
+        val got      = input.fromJsonValidation[Json].map(normalize)
 
         def e2s[A, B](e: Validation[A, B]) =
           e.fold(_.toString(), _.toString)

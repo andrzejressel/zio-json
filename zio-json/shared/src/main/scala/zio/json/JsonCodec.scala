@@ -58,7 +58,7 @@ final case class JsonCodec[A](encoder: JsonEncoder[A], decoder: JsonDecoder[A]) 
 
   final def <*(that: => JsonCodec[Unit]): JsonCodec[A] = self.zipLeft(that)
 
-  final def decodeJson(str: CharSequence): Validation[String, A] = decoder.decodeJson(str)
+  final def decodeJson(str: CharSequence): Validation[String, A] = decoder.decodeJsonValidation(str)
 
   final def encodeJson(a: A, indent: Option[Int]): CharSequence = encoder.encodeJson(a, indent)
 

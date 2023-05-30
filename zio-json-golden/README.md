@@ -19,24 +19,27 @@ Without golden testing, it's usually done the following way:
 ```scala
 import zio.json._
 import zio.test._
+
 object EncodeDecodeSpec extends ZIOSpecDefault {
 
   case class Banana(curvature: Double)
+
   object Banana {
     implicit val codec: JsonCodec[Banana] = DeriveJsonCodec.gen[Banana]
   }
 
   def spec = suite("EncodeDecodeSpec")(
     test("Encode/decode test for Banana") {
-      val banana   = Banana(0.5)
+      val banana = Banana(0.5)
       val expected = """{"curvature":0.5}"""
       assertTrue(
-        expected.fromJson[Banana].toOption.get == banana,
+        expected.fromJsonValidation[Banana].toOption.get == banana,
         banana.toJson == expected
       )
     }
   )
 }
+
 ```
 That's a lot of boilerplate for such a simple test.
 Let's show how we can do better using zio-json-golden.

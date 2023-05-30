@@ -12,10 +12,10 @@ object RefinedSpec extends ZIOSpecDefault {
   val spec: Spec[Environment, Any] =
     suite("Refined")(
       test("Refined") {
-        assert("""{"name":""}""".fromJson[Person])(
+        assert("""{"name":""}""".fromJsonValidation[Person])(
           isSingleFailure(equalTo(".name(Predicate isEmpty() did not fail.)"))
         ) &&
-        assert("""{"name":"fommil"}""".fromJson[Person])(isSucceeded(equalTo(Person("fommil")))) &&
+        assert("""{"name":"fommil"}""".fromJsonValidation[Person])(isSucceeded(equalTo(Person("fommil")))) &&
         assert(Person("fommil").toJson)(equalTo("""{"name":"fommil"}"""))
       }
     )

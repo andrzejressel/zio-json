@@ -15,30 +15,30 @@ object DeriveSpec extends ZIOSpecDefault {
 
           // actually anything works... consider this a canary test because if only
           // the empty object is supported that's fine.
-          assert("""{}""".fromJson[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
-          assert("""null""".fromJson[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
-          assert("""{"field":"value"}""".fromJson[Parameterless])(isSucceeded(equalTo(Parameterless())))
+          assert("""{}""".fromJsonValidation[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
+          assert("""null""".fromJsonValidation[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
+          assert("""{"field":"value"}""".fromJsonValidation[Parameterless])(isSucceeded(equalTo(Parameterless())))
         },
         test("no extra fields") {
           import exampleproducts._
 
-          assert("""{"s":""}""".fromJson[OnlyString])(isSucceeded(equalTo(OnlyString("")))) &&
-          assert("""{"s":"","t":""}""".fromJson[OnlyString])(isSingleFailure(equalTo("(invalid extra field)")))
+          assert("""{"s":""}""".fromJsonValidation[OnlyString])(isSucceeded(equalTo(OnlyString("")))) &&
+          assert("""{"s":"","t":""}""".fromJsonValidation[OnlyString])(isSingleFailure(equalTo("(invalid extra field)")))
         },
         test("sum encoding") {
           import examplesum._
 
-          assert("""{"Child1":{}}""".fromJson[Parent])(isSucceeded(equalTo(Child1()))) &&
-          assert("""{"Child2":{}}""".fromJson[Parent])(isSucceeded(equalTo(Child2()))) &&
-          assert("""{"type":"Child1"}""".fromJson[Parent])(isSingleFailure(equalTo("(invalid disambiguator)")))
+          assert("""{"Child1":{}}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child1()))) &&
+          assert("""{"Child2":{}}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child2()))) &&
+          assert("""{"type":"Child1"}""".fromJsonValidation[Parent])(isSingleFailure(equalTo("(invalid disambiguator)")))
         },
         test("sum alternative encoding") {
           import examplealtsum._
 
-          assert("""{"hint":"Cain"}""".fromJson[Parent])(isSucceeded(equalTo(Child1()))) &&
-          assert("""{"hint":"Abel"}""".fromJson[Parent])(isSucceeded(equalTo(Child2()))) &&
-          assert("""{"hint":"Samson"}""".fromJson[Parent])(isSingleFailure(equalTo("(invalid disambiguator)"))) &&
-          assert("""{"Cain":{}}""".fromJson[Parent])(isSingleFailure(equalTo("(missing hint 'hint')")))
+          assert("""{"hint":"Cain"}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child1()))) &&
+          assert("""{"hint":"Abel"}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child2()))) &&
+          assert("""{"hint":"Samson"}""".fromJsonValidation[Parent])(isSingleFailure(equalTo("(invalid disambiguator)"))) &&
+          assert("""{"Cain":{}}""".fromJsonValidation[Parent])(isSingleFailure(equalTo("(missing hint 'hint')")))
         }
       )
     )

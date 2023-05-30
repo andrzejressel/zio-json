@@ -24,7 +24,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ClassWithFields] = DeriveJsonCodec.gen
 
           assertTrue(
-            expectedStr.fromJson[ClassWithFields].toOption.get == expectedObj,
+            expectedStr.fromJsonValidation[ClassWithFields].toOption.get == expectedObj,
             expectedObj.toJson == expectedStr
           )
         },
@@ -35,7 +35,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ST] = DeriveJsonCodec.gen
 
           assertTrue(
-            expectedStr.fromJson[ST].toOption.get == expectedObj,
+            expectedStr.fromJsonValidation[ST].toOption.get == expectedObj,
             expectedObj.toJson == expectedStr
           )
         },
@@ -46,7 +46,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ClassWithFields] = DeriveJsonCodec.gen
 
           assertTrue(
-            jsonStr.fromJson[ClassWithFields].toOption.get == expectedObj
+            jsonStr.fromJsonValidation[ClassWithFields].toOption.get == expectedObj
           )
         }
       ),
@@ -96,7 +96,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ClassWithFields] = DeriveJsonCodec.gen
 
           assertTrue(
-            expectedStr.fromJson[ClassWithFields].toOption.get == expectedObj,
+            expectedStr.fromJsonValidation[ClassWithFields].toOption.get == expectedObj,
             expectedObj.toJson == expectedStr
           )
         },
@@ -109,7 +109,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ST] = DeriveJsonCodec.gen
 
           assertTrue(
-            expectedStr.fromJson[ST].toOption.get == expectedObj,
+            expectedStr.fromJsonValidation[ST].toOption.get == expectedObj,
             expectedObj.toJson == expectedStr
           )
         },
@@ -121,7 +121,7 @@ object ConfigurableDeriveCodecSpec extends ZIOSpecDefault {
           implicit val codec: JsonCodec[ClassWithFields] = DeriveJsonCodec.gen
 
           assertTrue(
-            jsonStr.fromJson[ClassWithFields].toEither.isLeft
+            jsonStr.fromJsonValidation[ClassWithFields].toEither.isLeft
           )
         }
       ),

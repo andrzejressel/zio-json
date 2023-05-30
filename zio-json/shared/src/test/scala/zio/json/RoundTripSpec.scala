@@ -110,6 +110,6 @@ object RoundTripSpec extends ZIOSpecDefault {
     }
 
   private def assertRoundtrips[A: JsonEncoder: JsonDecoder](a: A) =
-    assert(a.toJson.fromJson[A])(isSucceeded(equalTo(a))) &&
-      assert(a.toJsonPretty.fromJson[A])(isSucceeded(equalTo(a)))
+    assert(a.toJson.fromJsonValidation[A])(isSucceeded(equalTo(a))) &&
+      assert(a.toJsonPretty.fromJsonValidation[A])(isSucceeded(equalTo(a)))
 }

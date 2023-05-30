@@ -34,16 +34,16 @@ object CarterSpec extends ZIOSpecDefault {
       test("simple left") {
         type Data = Union[String, Int]
         val expect: Validation[String, Data] = succeed(Union(Left("foo")))
-        assert(JsonDecoder[Data].decodeJson("\"foo\""))(equalTo(expect))
+        assert(JsonDecoder[Data].decodeJsonValidation("\"foo\""))(equalTo(expect))
       },
       test("simple right") {
         type Data = Union[String, Int]
         val expect: Validation[String, Data] = succeed(Union(Right(1)))
-        assert(JsonDecoder[Data].decodeJson("1"))(equalTo(expect))
+        assert(JsonDecoder[Data].decodeJsonValidation("1"))(equalTo(expect))
       },
       test("case class 1 field") {
         val expect: Validation[String, Testing0] = succeed(Testing0(Union(Left("2025-01-01"))))
-        assert(JsonDecoder[Testing0].decodeJson("{\"y\":\"2025-01-01\"}"))(equalTo(expect))
+        assert(JsonDecoder[Testing0].decodeJsonValidation("{\"y\":\"2025-01-01\"}"))(equalTo(expect))
       },
       test("https://github.com/zio/zio-json/issues/209") {
         // that works fine, normally, but we wrap the input reader with a
@@ -57,11 +57,11 @@ object CarterSpec extends ZIOSpecDefault {
         // 2. or (uuugh) the caller should always check if a recording reader is
         //    all caught up before returning control back to the underlying
         val expect: Validation[String, Testing1] = succeed(Testing1(Union(Right(0.1)), Union(Left("2025-01-01"))))
-        assert(JsonDecoder[Testing1].decodeJson("{\"x\":0.1,\"y\":\"2025-01-01\"}"))(equalTo(expect))
+        assert(JsonDecoder[Testing1].decodeJsonValidation("{\"x\":0.1,\"y\":\"2025-01-01\"}"))(equalTo(expect))
       },
       test("whitespace showing no retract call") {
         val expect: Validation[String, Testing1] = succeed(Testing1(Union(Right(0.1)), Union(Left("2025-01-01"))))
-        assert(JsonDecoder[Testing1].decodeJson("{\"x\":0.1 ,\"y\":\"2025-01-01\"}"))(equalTo(expect))
+        assert(JsonDecoder[Testing1].decodeJsonValidation("{\"x\":0.1 ,\"y\":\"2025-01-01\"}"))(equalTo(expect))
       }
     )
 

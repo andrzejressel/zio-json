@@ -31,7 +31,7 @@ object GeneratorSpec extends ZIOSpecDefault {
             |}
             |""".stripMargin.trim
 
-        val result = Generator.generate(json.fromJson[ast.Json].toOption.get)
+        val result = Generator.generate(json.fromJsonValidation[ast.Json].toOption.get)
 
         assertTrue(result == expected)
       },
@@ -76,7 +76,7 @@ object GeneratorSpec extends ZIOSpecDefault {
             |}
             |""".stripMargin.trim
 
-        val result = Generator.generate(json.fromJson[ast.Json].toOption.get)
+        val result = Generator.generate(json.fromJsonValidation[ast.Json].toOption.get)
 
         assertTrue(result == expected)
       },
@@ -108,7 +108,7 @@ object GeneratorSpec extends ZIOSpecDefault {
               |}
               |""".stripMargin.trim
 
-          val result = Generator.generate(json.fromJson[ast.Json].toOption.get)
+          val result = Generator.generate(json.fromJsonValidation[ast.Json].toOption.get)
 
           assertTrue(result == expected)
         }
@@ -135,7 +135,7 @@ object GeneratorSpec extends ZIOSpecDefault {
               |}
               |""".stripMargin.trim
 
-          val result = Generator.generate(json.fromJson[ast.Json].toOption.get)
+          val result = Generator.generate(json.fromJsonValidation[ast.Json].toOption.get)
 
           assertTrue(result == expected)
         },
@@ -177,7 +177,7 @@ object GeneratorSpec extends ZIOSpecDefault {
               |}
               |""".stripMargin.trim
 
-          val result = Generator.generate(json.fromJson[Json].toOption.get)
+          val result = Generator.generate(json.fromJsonValidation[Json].toOption.get)
 
           assertTrue(result == expected)
         },
@@ -202,7 +202,7 @@ object GeneratorSpec extends ZIOSpecDefault {
               |}
               |""".stripMargin.trim
 
-          val result = Generator.generate(json.fromJson[Json].toOption.get)
+          val result = Generator.generate(json.fromJsonValidation[Json].toOption.get)
           assertTrue(result == expected)
         },
         test("unify double and int to double") {
@@ -227,7 +227,7 @@ object GeneratorSpec extends ZIOSpecDefault {
               |}
               |""".stripMargin.trim
 
-          val result = Generator.generate(json.fromJson[Json].toOption.get)
+          val result = Generator.generate(json.fromJsonValidation[Json].toOption.get)
           assertTrue(result == expected)
 
         }

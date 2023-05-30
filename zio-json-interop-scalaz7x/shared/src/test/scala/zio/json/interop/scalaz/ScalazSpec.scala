@@ -15,7 +15,7 @@ object ScalazSpec extends ZIOSpecDefault {
         assert(IList(1, 2, 3).toJson)(equalTo("[1,2,3]")) &&
         assert(IList[Int]().toJsonPretty)(equalTo("[]")) &&
         assert(IList(1, 2, 3).toJsonPretty)(equalTo("[\n  1,\n  2,\n  3\n]")) &&
-        assert("""[1,2,3]""".fromJson[IList[Int]])(isSucceeded(equalTo(IList(1, 2, 3))))
+        assert("""[1,2,3]""".fromJsonValidation[IList[Int]])(isSucceeded(equalTo(IList(1, 2, 3))))
       }
     )
 }

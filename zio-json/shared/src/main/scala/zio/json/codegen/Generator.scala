@@ -52,7 +52,7 @@ object Generator {
    * }}}
    */
   def printCaseClasses(input: String): Unit =
-    input.fromJson[ast.Json].toOption match {
+    input.fromJsonValidation[ast.Json].toOption match {
       case Some(json) => println(scala.Console.CYAN + generate(json) + scala.Console.RESET)
       case None       => println(s"Invalid JSON: ${input}")
     }

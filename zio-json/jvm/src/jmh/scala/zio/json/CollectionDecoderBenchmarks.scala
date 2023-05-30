@@ -1,9 +1,9 @@
 package zio.json
 
 import java.util.concurrent.TimeUnit
-
 import org.openjdk.jmh.annotations._
 import zio.Chunk
+import zio.prelude.Validation
 
 import scala.collection.immutable
 
@@ -23,34 +23,34 @@ class CollectionDecoderBenchmarks {
   }
 
   @Benchmark
-  def decodeChunk: Either[String, Chunk[String]] =
-    encodedArray.fromJson[Chunk[String]]
+  def decodeChunk: Validation[String, Chunk[String]] =
+    encodedArray.fromJsonValidation[Chunk[String]]
 
   @Benchmark
-  def decodeList: Either[String, List[String]] =
-    encodedArray.fromJson[immutable.List[String]]
+  def decodeList: Validation[String, List[String]] =
+    encodedArray.fromJsonValidation[immutable.List[String]]
 
   @Benchmark
-  def decodeMap: Either[String, Map[String, String]] =
-    encodedObject.fromJson[immutable.Map[String, String]]
+  def decodeMap: Validation[String, Map[String, String]] =
+    encodedObject.fromJsonValidation[immutable.Map[String, String]]
 
   @Benchmark
-  def decodeSet: Either[String, Set[String]] =
-    encodedArray.fromJson[immutable.Set[String]]
+  def decodeSet: Validation[String, Set[String]] =
+    encodedArray.fromJsonValidation[immutable.Set[String]]
 
   @Benchmark
-  def decodeSeq: Either[String, immutable.Seq[String]] =
-    encodedArray.fromJson[immutable.Seq[String]]
+  def decodeSeq: Validation[String, immutable.Seq[String]] =
+    encodedArray.fromJsonValidation[immutable.Seq[String]]
 
   @Benchmark
-  def decodeSortedSet: Either[String, Set[String]] =
-    encodedArray.fromJson[immutable.SortedSet[String]]
+  def decodeSortedSet: Validation[String, Set[String]] =
+    encodedArray.fromJsonValidation[immutable.SortedSet[String]]
 
   @Benchmark
-  def decodeSortedMap: Either[String, collection.SortedMap[String, String]] =
-    encodedObject.fromJson[collection.SortedMap[String, String]]
+  def decodeSortedMap: Validation[String, collection.SortedMap[String, String]] =
+    encodedObject.fromJsonValidation[collection.SortedMap[String, String]]
 
   @Benchmark
-  def decodeVector: Either[String, Vector[String]] =
-    encodedArray.fromJson[immutable.Vector[String]]
+  def decodeVector: Validation[String, Vector[String]] =
+    encodedArray.fromJsonValidation[immutable.Vector[String]]
 }

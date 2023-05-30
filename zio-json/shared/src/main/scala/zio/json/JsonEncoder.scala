@@ -99,7 +99,7 @@ trait JsonEncoder[A] extends JsonEncoderPlatformSpecific[A] {
    * uses decode to parse that back to an AST. Override to provide a more performant
    * implementation.
    */
-  def toJsonAST(a: A): Validation[String, Json] = Json.decoder.decodeJson(encodeJson(a, None))
+  def toJsonAST(a: A): Validation[String, Json] = Json.decoder.decodeJsonValidation(encodeJson(a, None))
 
   /**
    * Returns a new encoder that is capable of encoding a tuple containing the values of this

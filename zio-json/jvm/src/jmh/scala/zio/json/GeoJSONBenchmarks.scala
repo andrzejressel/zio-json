@@ -107,11 +107,11 @@ class GeoJSONBenchmarks {
 
   @Benchmark
   def decodeZioSuccess1(): Either[String, GeoJSON] =
-    jsonChars1.fromJson[GeoJSON]
+    jsonChars1.fromJsonValidation[GeoJSON]
 
   @Benchmark
   def decodeZioSuccess2(): Either[String, GeoJSON] =
-    jsonChars2.fromJson[GeoJSON]
+    jsonChars2.fromJsonValidation[GeoJSON]
 
   @Benchmark
   def encodeZio(): CharSequence =
@@ -119,7 +119,7 @@ class GeoJSONBenchmarks {
 
   @Benchmark
   def decodeZioError(): Either[String, GeoJSON] =
-    jsonCharsErr.fromJson[GeoJSON]
+    jsonCharsErr.fromJsonValidation[GeoJSON]
 
 }
 

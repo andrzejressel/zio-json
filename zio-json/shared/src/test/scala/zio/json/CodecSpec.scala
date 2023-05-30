@@ -24,7 +24,7 @@ object CodecSpec extends ZIOSpecDefault {
           val expected = RecursiveOption(100, 0.25, List("a", "b"), Some(RecursiveOption(200, 0, Nil, None)))
 
           val decoded = JsonCodec[RecursiveOption].decoder
-            .decodeJson("""{"i":100,"d":0.25,"s":["a","b"],"o":{"i":200,"d":0,"s":[]}}""")
+            .decodeJsonValidation("""{"i":100,"d":0.25,"s":["a","b"],"o":{"i":200,"d":0,"s":[]}}""")
 
           assertTrue(decoded.toEither.right.get == expected)
         }
@@ -32,24 +32,24 @@ object CodecSpec extends ZIOSpecDefault {
       suite("Decoding")(
         test("empty") {
           import exampleempty._
-          assert("{}".fromJson[Empty])(
+          assert("{}".fromJsonValidation[Empty])(
             isSucceeded(equalTo(Empty(None)))
           )
         },
         test("primitives") {
           val exampleBDString = "234234.234"
           // this big integer consumes more than 128 bits
-          assert("170141183460469231731687303715884105728".fromJson[java.math.BigInteger])(
+          assert("170141183460469231731687303715884105728".fromJsonValidation[java.math.BigInteger])(
             isSingleFailure(equalTo("(expected a 128 bit BigInteger)"))
-          ) && assert(exampleBDString.fromJson[BigDecimal])(isSucceeded(equalTo(BigDecimal(exampleBDString))))
+          ) && assert(exampleBDString.fromJsonValidation[BigDecimal])(isSucceeded(equalTo(BigDecimal(exampleBDString))))
         },
         test("eithers") {
           val bernies = List("""{"a":1}""", """{"left":1}""", """{"Left":1}""")
           val trumps  = List("""{"b":2}""", """{"right":2}""", """{"Right":2}""")
 
-          assert(bernies.map(_.fromJson[Either[Int, Int]]))(
+          assert(bernies.map(_.fromJsonValidation[Either[Int, Int]]))(
             forall(isSucceeded(isLeft(equalTo(1))))
-          ) && assert(trumps.map(_.fromJson[Either[Int, Int]]))(
+          ) && assert(trumps.map(_.fromJsonValidation[Either[Int, Int]]))(
             forall(isSucceeded(isRight(equalTo(2))))
           )
         },
@@ -58,30 +58,30 @@ object CodecSpec extends ZIOSpecDefault {
 
           // actually anything works... consider this a canary test because if only
           // the empty object is supported that's fine.
-          assert("""{}""".fromJson[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
-          assert("""null""".fromJson[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
-          assert("""{"field":"value"}""".fromJson[Parameterless])(isSucceeded(equalTo(Parameterless())))
+          assert("""{}""".fromJsonValidation[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
+          assert("""null""".fromJsonValidation[Parameterless])(isSucceeded(equalTo(Parameterless()))) &&
+          assert("""{"field":"value"}""".fromJsonValidation[Parameterless])(isSucceeded(equalTo(Parameterless())))
         },
         test("no extra fields") {
           import exampleproducts._
 
-          assert("""{"s":""}""".fromJson[OnlyString])(isSucceeded(equalTo(OnlyString("")))) &&
-          assert("""{"s":"","t":""}""".fromJson[OnlyString])(isSingleFailure(equalTo("(invalid extra field)")))
+          assert("""{"s":""}""".fromJsonValidation[OnlyString])(isSucceeded(equalTo(OnlyString("")))) &&
+          assert("""{"s":"","t":""}""".fromJsonValidation[OnlyString])(isSingleFailure(equalTo("(invalid extra field)")))
         },
         test("sum encoding") {
           import examplesum._
 
-          assert("""{"Child1":{}}""".fromJson[Parent])(isSucceeded(equalTo(Child1()))) &&
-          assert("""{"Child2":{}}""".fromJson[Parent])(isSucceeded(equalTo(Child2()))) &&
-          assert("""{"type":"Child1"}""".fromJson[Parent])(isSingleFailure(equalTo("(invalid disambiguator)")))
+          assert("""{"Child1":{}}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child1()))) &&
+          assert("""{"Child2":{}}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child2()))) &&
+          assert("""{"type":"Child1"}""".fromJsonValidation[Parent])(isSingleFailure(equalTo("(invalid disambiguator)")))
         },
         test("sum alternative encoding") {
           import examplealtsum._
 
-          assert("""{"hint":"Cain"}""".fromJson[Parent])(isSucceeded(equalTo(Child1()))) &&
-          assert("""{"hint":"Abel"}""".fromJson[Parent])(isSucceeded(equalTo(Child2()))) &&
-          assert("""{"hint":"Samson"}""".fromJson[Parent])(isSingleFailure(equalTo("(invalid disambiguator)"))) &&
-          assert("""{"Cain":{}}""".fromJson[Parent])(isSingleFailure(equalTo("(missing hint 'hint')")))
+          assert("""{"hint":"Cain"}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child1()))) &&
+          assert("""{"hint":"Abel"}""".fromJsonValidation[Parent])(isSucceeded(equalTo(Child2()))) &&
+          assert("""{"hint":"Samson"}""".fromJsonValidation[Parent])(isSingleFailure(equalTo("(invalid disambiguator)"))) &&
+          assert("""{"Cain":{}}""".fromJsonValidation[Parent])(isSingleFailure(equalTo("(missing hint 'hint')")))
         },
         test("key transformation") {
           import exampletransformkeys._
@@ -94,74 +94,74 @@ object CodecSpec extends ZIOSpecDefault {
           val kebabedLegacy = """{"shish-123-kebab":""}"""
           val snakedLegacy  = """{"indiana_123_jones":""}"""
 
-          assert(kebabed.fromJson[Kebabed])(isSucceeded(equalTo(Kebabed("")))) &&
-          assert(kebabedLegacy.fromJson[legacy.Kebabed])(isSucceeded(equalTo(legacy.Kebabed("")))) &&
-          assert(snaked.fromJson[Snaked])(isSucceeded(equalTo(Snaked("")))) &&
-          assert(snakedLegacy.fromJson[legacy.Snaked])(isSucceeded(equalTo(legacy.Snaked("")))) &&
-          assert(pascaled.fromJson[Pascaled])(isSucceeded(equalTo(Pascaled("")))) &&
-          assert(cameled.fromJson[Cameled])(isSucceeded(equalTo(Cameled("")))) &&
-          assert(indianaJones.fromJson[Custom])(isSucceeded(equalTo(Custom("")))) &&
-          assert(overrides.fromJson[OverridesAlsoWork])(isSucceeded(equalTo(OverridesAlsoWork("", 0)))) &&
+          assert(kebabed.fromJsonValidation[Kebabed])(isSucceeded(equalTo(Kebabed("")))) &&
+          assert(kebabedLegacy.fromJsonValidation[legacy.Kebabed])(isSucceeded(equalTo(legacy.Kebabed("")))) &&
+          assert(snaked.fromJsonValidation[Snaked])(isSucceeded(equalTo(Snaked("")))) &&
+          assert(snakedLegacy.fromJsonValidation[legacy.Snaked])(isSucceeded(equalTo(legacy.Snaked("")))) &&
+          assert(pascaled.fromJsonValidation[Pascaled])(isSucceeded(equalTo(Pascaled("")))) &&
+          assert(cameled.fromJsonValidation[Cameled])(isSucceeded(equalTo(Cameled("")))) &&
+          assert(indianaJones.fromJsonValidation[Custom])(isSucceeded(equalTo(Custom("")))) &&
+          assert(overrides.fromJsonValidation[OverridesAlsoWork])(isSucceeded(equalTo(OverridesAlsoWork("", 0)))) &&
           assertTrue(Kebabed("").toJson == kebabed) &&
-          assertTrue(Kebabed("").toJsonAST.toOption.get == kebabed.fromJson[Json].toOption.get) &&
+          assertTrue(Kebabed("").toJsonAST.toOption.get == kebabed.fromJsonValidation[Json].toOption.get) &&
           assertTrue(legacy.Kebabed("").toJson == kebabedLegacy) &&
-          assertTrue(legacy.Kebabed("").toJsonAST.toOption.get == kebabedLegacy.fromJson[Json].toOption.get) &&
+          assertTrue(legacy.Kebabed("").toJsonAST.toOption.get == kebabedLegacy.fromJsonValidation[Json].toOption.get) &&
           assertTrue(Snaked("").toJson == snaked) &&
-          assertTrue(Snaked("").toJsonAST.toOption.get == snaked.fromJson[Json].toOption.get) &&
+          assertTrue(Snaked("").toJsonAST.toOption.get == snaked.fromJsonValidation[Json].toOption.get) &&
           assertTrue(legacy.Snaked("").toJson == snakedLegacy) &&
-          assertTrue(legacy.Snaked("").toJsonAST.toOption.get == snakedLegacy.fromJson[Json].toOption.get) &&
+          assertTrue(legacy.Snaked("").toJsonAST.toOption.get == snakedLegacy.fromJsonValidation[Json].toOption.get) &&
           assertTrue(Pascaled("").toJson == pascaled) &&
-          assertTrue(Pascaled("").toJsonAST.toOption.get == pascaled.fromJson[Json].toOption.get) &&
+          assertTrue(Pascaled("").toJsonAST.toOption.get == pascaled.fromJsonValidation[Json].toOption.get) &&
           assertTrue(Cameled("").toJson == cameled) &&
-          assertTrue(Cameled("").toJsonAST.toOption.get == cameled.fromJson[Json].toOption.get) &&
+          assertTrue(Cameled("").toJsonAST.toOption.get == cameled.fromJsonValidation[Json].toOption.get) &&
           assertTrue(Custom("").toJson == indianaJones) &&
-          assertTrue(Custom("").toJsonAST.toOption.get == indianaJones.fromJson[Json].toOption.get) &&
+          assertTrue(Custom("").toJsonAST.toOption.get == indianaJones.fromJsonValidation[Json].toOption.get) &&
           assertTrue(OverridesAlsoWork("", 0).toJson == overrides)
         },
         test("unicode") {
-          assert(""""€🐵🥰"""".fromJson[String])(isSucceeded(equalTo("€🐵🥰")))
+          assert(""""€🐵🥰"""".fromJsonValidation[String])(isSucceeded(equalTo("€🐵🥰")))
         },
         test("Seq") {
           val jsonStr  = """["5XL","2XL","XL"]"""
           val expected = Seq("5XL", "2XL", "XL")
 
-          assert(jsonStr.fromJson[Seq[String]])(isSucceeded(equalTo(expected)))
+          assert(jsonStr.fromJsonValidation[Seq[String]])(isSucceeded(equalTo(expected)))
         },
         test("Vector") {
           val jsonStr  = """["5XL","2XL","XL"]"""
           val expected = Vector("5XL", "2XL", "XL")
 
-          assert(jsonStr.fromJson[Vector[String]])(isSucceeded(equalTo(expected)))
+          assert(jsonStr.fromJsonValidation[Vector[String]])(isSucceeded(equalTo(expected)))
         },
         test("SortedSet") {
           val jsonStr  = """["5XL","2XL","XL"]"""
           val expected = immutable.SortedSet("5XL", "2XL", "XL")
 
-          assert(jsonStr.fromJson[immutable.SortedSet[String]])(isSucceeded(equalTo(expected)))
+          assert(jsonStr.fromJsonValidation[immutable.SortedSet[String]])(isSucceeded(equalTo(expected)))
         },
         test("HashSet") {
           val jsonStr  = """["5XL","2XL","XL"]"""
           val expected = immutable.HashSet("5XL", "2XL", "XL")
 
-          assert(jsonStr.fromJson[immutable.HashSet[String]])(isSucceeded(equalTo(expected)))
+          assert(jsonStr.fromJsonValidation[immutable.HashSet[String]])(isSucceeded(equalTo(expected)))
         },
         test("Set") {
           val jsonStr  = """["5XL","2XL","XL"]"""
           val expected = Set("5XL", "2XL", "XL")
 
-          assert(jsonStr.fromJson[Set[String]])(isSucceeded(equalTo(expected)))
+          assert(jsonStr.fromJsonValidation[Set[String]])(isSucceeded(equalTo(expected)))
         },
         test("Map") {
           val jsonStr  = """{"5XL":3,"2XL":14,"XL":159}"""
           val expected = Map("5XL" -> 3, "2XL" -> 14, "XL" -> 159)
 
-          assert(jsonStr.fromJson[Map[String, Int]])(isSucceeded(equalTo(expected)))
+          assert(jsonStr.fromJsonValidation[Map[String, Int]])(isSucceeded(equalTo(expected)))
         },
         test("zio.Chunk") {
           val jsonStr  = """["5XL","2XL","XL"]"""
           val expected = Chunk("5XL", "2XL", "XL")
 
-          assert(jsonStr.fromJson[Chunk[String]])(isSucceeded(equalTo(expected)))
+          assert(jsonStr.fromJsonValidation[Chunk[String]])(isSucceeded(equalTo(expected)))
         }
       ),
       suite("Encode -> Decode")(

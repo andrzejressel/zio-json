@@ -65,9 +65,21 @@ trait JsonDecoder[A] extends JsonDecoderPlatformSpecific[A] {
    * Attempts to decode a value of type `A` from the specified `CharSequence`, but may fail with
    * a human-readable error message if the provided text does not encode a value of this type.
    *
+   * This method return only one error and should not be used - decodeJsonValidation returns list of errors
+   *
    * Note: This method may not entirely consume the specified character sequence.
    */
-  final def decodeJson(str: CharSequence): Validation[String, A] =
+  @deprecated("Use decodeJsonValidation instead", since = "0.6.0")
+  final def decodeJson(str: CharSequence): Either[String, A] =
+    decodeJsonValidation(str).toEither.left.map(_.head)
+
+  /**
+   * Attempts to decode a value of type `A` from the specified `CharSequence`, but may fail with
+   * a human-readable error message if the provided text does not encode a value of this type.
+   *
+   * Note: This method may not entirely consume the specified character sequence.
+   */
+  final def decodeJsonValidation(str: CharSequence): Validation[String, A] =
     try succeed(unsafeDecode(Nil, new FastStringReader(str)))
     catch {
       case JsonDecoder.UnsafeJson(trace) => fail(JsonError.render(trace))
@@ -221,6 +233,7 @@ trait JsonDecoder[A] extends JsonDecoderPlatformSpecific[A] {
       case JsonDecoder.UnsafeJson(trace) => JsonError.render(trace)
       case _: UnexpectedEnd              => "Unexpected end of input"
       case _: StackOverflowError         => "Unexpected structure"
+      case e => s"Unexpected exception: ${e.getMessage}"
     }
 
 }
